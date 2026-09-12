@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aqarly</title>
+<meta name="description" content="Live AI WhatsApp assistant demo for a Dubai real-estate brokerage — matches enquiries against a 12-listing database across budgets, qualifies the lead, and books the viewing.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ink:#132420; --stone:#e8e4d8; --stone-raised:#f8f6ef;
+    --brass:#b6893f; --brass-strong:#8f6a2c; --marina:#2f6b5e;
+    --sable:#3c3629; --mist:#7c8b83; --line:rgba(60,54,41,0.16);
+    --hot:#a6402a; --warm:#b6893f; --cold:#4f7583;
+    --text:var(--sable); --text-muted:var(--mist); --bg:var(--stone); --surface:var(--stone-raised);
+    --border:var(--line); --accent:var(--brass); --accent-strong:var(--brass-strong);
+    --on-dark-text:#eee7d6; --on-dark-muted:#a9bab2;
+    --wa-green:#008069; --wa-chat-bg:#e7e0d3; --wa-dot:rgba(60,54,41,0.06);
+    --wa-sent:#d9fdd3; --wa-sent-text:#123524; --wa-received:#ffffff; --wa-received-text:#3c3629;
+    --wa-meta:rgba(60,54,41,0.55); --wa-composer-bg:#f0ece2;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --text:#eee7d6; --text-muted:#9db0a8; --bg:#0d1815; --surface:#16241f;
+      --border:rgba(238,231,214,0.14); --accent:#d3a75e; --accent-strong:#e8c383;
+      --sable:#eee7d6; --mist:#9db0a8;
+      --wa-chat-bg:#0b141a; --wa-dot:rgba(238,231,214,0.05);
+      --wa-sent:#144d37; --wa-sent-text:#e9fbef; --wa-received:#1f2c34; --wa-received-text:#eee7d6;
+      --wa-meta:rgba(238,231,214,0.5); --wa-composer-bg:#101a20;
+    }
+  }
+  :root[data-theme="dark"]{
+    --text:#eee7d6; --text-muted:#9db0a8; --bg:#0d1815; --surface:#16241f;
+    --border:rgba(238,231,214,0.14); --accent:#d3a75e; --accent-strong:#e8c383;
+    --sable:#eee7d6; --mist:#9db0a8;
+    --wa-chat-bg:#0b141a; --wa-dot:rgba(238,231,214,0.05);
+    --wa-sent:#144d37; --wa-sent-text:#e9fbef; --wa-received:#1f2c34; --wa-received-text:#eee7d6;
+    --wa-meta:rgba(238,231,214,0.5); --wa-composer-bg:#101a20;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--bg); color:var(--text); font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
+  h1,h2,h3{ font-family:"Fraunces", Georgia, serif; text-wrap:balance; margin:0; }
+  img,svg{ max-width:100%; }
+  [hidden]{ display:none !important; }
+
+  .page{ max-width:1160px; margin:0 auto; padding:0 24px 64px; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:22px 0 18px; }
+  .wordmark{ font-family:"Fraunces", serif; font-weight:700; font-size:1.3rem; letter-spacing:0.06em; color:var(--text); }
+  .wordmark span{ color:var(--accent); }
+  .topbar-meta{ display:flex; align-items:center; gap:8px; font-size:0.78rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-muted); }
+  .dot{ width:7px; height:7px; border-radius:50%; background:var(--marina); box-shadow:0 0 0 3px color-mix(in srgb, var(--marina) 25%, transparent); }
+
+  .hero{ padding:28px 0 8px; max-width:760px; }
+  .eyebrow{ font-size:0.8rem; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent-strong); margin:0 0 12px; font-weight:600; }
+  .hero h1{ font-size:clamp(1.9rem, 3.4vw, 2.7rem); line-height:1.12; font-weight:600; }
+  .hero-sub{ margin:16px 0 0; font-size:1.02rem; line-height:1.55; color:var(--text-muted); max-width:60ch; }
+
+  .demo{ margin-top:34px; }
+  .tabs{ display:flex; gap:6px; margin-bottom:14px; }
+  .tab{ font:inherit; font-size:0.88rem; font-weight:600; letter-spacing:0.02em; padding:9px 16px; border-radius:999px; border:1px solid var(--border); background:transparent; color:var(--text-muted); cursor:pointer; }
+  .tab.active{ background:var(--ink); color:var(--on-dark-text); border-color:var(--ink); }
+  .tab:focus-visible, button:focus-visible, input:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .stage{ background:var(--ink); border-radius:22px; padding:clamp(16px,3vw,30px); }
+
+  .phone-wrap{ display:flex; justify-content:center; }
+  .phone{ width:100%; max-width:380px; border-radius:26px; overflow:hidden; display:flex; flex-direction:column; background:var(--wa-chat-bg); box-shadow:0 24px 60px rgba(0,0,0,0.35); border:1px solid rgba(0,0,0,0.15); }
+  .wa-header{ background:var(--wa-green); color:#fff; display:flex; align-items:center; gap:10px; padding:12px 14px; }
+  .wa-avatar{ width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-family:"Fraunces",serif; font-weight:700; font-size:0.95rem; flex-shrink:0; }
+  .wa-title{ font-weight:700; font-size:0.95rem; line-height:1.2; }
+  .wa-sub{ font-size:0.72rem; opacity:0.9; display:flex; align-items:center; gap:5px; margin-top:1px; }
+  .wa-sub .dot{ background:#bff7d3; box-shadow:none; width:6px; height:6px; }
+  .wa-header-actions{ margin-left:auto; display:flex; gap:6px; }
+  .wa-icon-btn{ background:rgba(255,255,255,0.16); border:none; color:#fff; width:30px; height:30px; border-radius:50%; cursor:pointer; font-size:0.9rem; line-height:1; flex-shrink:0; }
+  .wa-icon-btn:hover{ background:rgba(255,255,255,0.28); }
+
+  .wa-keybar{ display:flex; flex-direction:column; gap:8px; padding:12px 14px; background:var(--wa-composer-bg); border-bottom:1px solid var(--border); }
+  .wa-keybar p{ margin:0; font-size:0.74rem; color:var(--text-muted); line-height:1.4; }
+  .wa-keybar .row{ display:flex; gap:6px; }
+  .wa-keybar input{ flex:1; border:none; border-radius:8px; padding:8px 10px; font:inherit; font-size:0.8rem; background:var(--wa-received); color:var(--wa-received-text); }
+  .wa-keybar button{ font:inherit; font-weight:600; font-size:0.78rem; padding:0 14px; border-radius:8px; border:none; background:var(--accent); color:#241a08; cursor:pointer; }
+  .wa-keybar a{ color:var(--accent-strong); }
+
+  .wa-messages{ flex:1; min-height:380px; max-height:460px; overflow-y:auto; padding:14px 10px; display:flex; flex-direction:column; background-image: radial-gradient(var(--wa-dot) 1px, transparent 1px); background-size:16px 16px; }
+  .wa-row{ display:flex; flex-direction:column; max-width:86%; margin:3px 0; }
+  .wa-row.user{ align-self:flex-end; align-items:flex-end; }
+  .wa-row.bot{ align-self:flex-start; align-items:flex-start; }
+  .wa-bubble{ padding:7px 9px 8px; border-radius:9px; font-size:0.88rem; line-height:1.42; white-space:pre-wrap; }
+  .wa-bubble.user{ background:var(--wa-sent); color:var(--wa-sent-text); border-top-right-radius:2px; }
+  .wa-bubble.bot{ background:var(--wa-received); color:var(--wa-received-text); border-top-left-radius:2px; box-shadow:0 1px 1px rgba(0,0,0,0.1); }
+  .wa-bubble.thinking{ font-style:italic; opacity:0.75; }
+  .wa-meta{ font-size:0.64rem; color:var(--wa-meta); margin-top:2px; padding:0 3px; display:flex; gap:4px; align-items:center; }
+  .wa-tick{ color:#53bdeb; }
+
+  .prop-cards{ display:flex; flex-direction:column; gap:6px; margin-top:3px; width:100%; }
+  .prop-card{ display:flex; gap:9px; background:var(--wa-received); border-radius:10px; padding:8px; box-shadow:0 1px 1px rgba(0,0,0,0.1); align-items:center; }
+  .prop-thumb{ width:56px; height:42px; border-radius:8px; overflow:hidden; flex-shrink:0; }
+  .prop-thumb svg{ width:100%; height:100%; display:block; }
+  .prop-info{ min-width:0; }
+  .prop-title{ font-weight:700; font-size:0.8rem; color:var(--wa-received-text); }
+  .prop-meta{ font-size:0.7rem; color:var(--text-muted); margin-top:1px; }
+  .prop-price{ font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:0.78rem; margin-top:2px; color:var(--accent-strong); }
+
+  .wa-composer{ display:flex; align-items:center; gap:8px; padding:9px 10px; background:var(--wa-composer-bg); }
+  .wa-composer input{ flex:1; border:none; border-radius:20px; padding:10px 14px; font:inherit; font-size:0.88rem; background:var(--wa-received); color:var(--wa-received-text); }
+  .wa-send{ width:38px; height:38px; border-radius:50%; background:var(--wa-green); border:none; color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; }
+  .wa-send:disabled{ opacity:0.5; cursor:default; }
+  .status-line{ text-align:center; padding:6px 14px 0; font-size:0.72rem; color:var(--text-muted); }
+  .status-line.error{ color:var(--hot); }
+
+  .dash-head{ padding:6px 4px 18px; color:var(--on-dark-text); }
+  .dash-head h2{ font-size:1.3rem; color:var(--on-dark-text); font-weight:600; }
+  .dash-head p{ margin:6px 0 0; color:var(--on-dark-muted); font-size:0.88rem; }
+  .lead-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(270px,1fr)); gap:12px; }
+  .lead-card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:15px 16px; display:flex; flex-direction:column; gap:10px; }
+  .lead-card.live{ outline:2px solid var(--accent); outline-offset:-1px; }
+  .lead-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+  .lead-name{ font-weight:700; font-size:0.98rem; }
+  .lead-contact{ font-size:0.78rem; color:var(--text-muted); font-family:"IBM Plex Mono",monospace; }
+  .badge{ font-size:0.7rem; font-weight:700; letter-spacing:0.04em; text-transform:uppercase; padding:4px 9px; border-radius:999px; color:#fff; white-space:nowrap; }
+  .badge.hot{ background:var(--hot); }
+  .badge.warm{ background:var(--warm); color:#241a08; }
+  .badge.cold{ background:var(--cold); }
+  .lead-summary{ font-size:0.85rem; line-height:1.4; color:var(--text); }
+  .lead-facts{ display:grid; grid-template-columns:1fr 1fr; gap:6px 10px; font-size:0.76rem; }
+  .lead-facts dt{ color:var(--text-muted); }
+  .lead-facts dd{ margin:1px 0 0; font-weight:600; }
+  .lead-foot{ display:flex; align-items:center; justify-content:space-between; font-size:0.72rem; color:var(--text-muted); border-top:1px dashed var(--border); padding-top:8px; }
+  .live-tag{ display:inline-flex; align-items:center; gap:5px; color:var(--accent); font-weight:700; }
+  .live-tag .dot{ background:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); animation:pulse 1.6s infinite; }
+  @media (prefers-reduced-motion: reduce){ .live-tag .dot{ animation:none; } }
+  @keyframes pulse{ 0%,100%{ opacity:1;} 50%{ opacity:0.35;} }
+  .example-tag{ color:var(--text-muted); font-style:italic; }
+
+  .value-strip{ margin-top:40px; display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:720px){ .value-strip{ grid-template-columns:1fr; } }
+  .value-item{ padding-top:14px; border-top:1px solid var(--border); }
+  .value-item h3{ font-size:1rem; font-weight:600; margin-bottom:6px; }
+  .value-item p{ margin:0; font-size:0.88rem; color:var(--text-muted); line-height:1.5; }
+
+  footer{ margin-top:48px; padding-top:18px; border-top:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; font-size:0.78rem; color:var(--text-muted); }
+  footer .ar{ font-family:"IBM Plex Sans",sans-serif; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header class="topbar">
+    <div class="wordmark">AQAR<span>LY</span></div>
+    <div class="topbar-meta"><span class="dot"></span>Live AI Demo</div>
+  </header>
+
+  <section class="hero">
+    <p class="eyebrow">AI Leasing Assistant · WhatsApp · Dubai Real Estate</p>
+    <h1>Every WhatsApp enquiry qualified before your team says hello.</h1>
+    <p class="hero-sub">A customer messages Aqarly Properties on WhatsApp first — no listing page, no form. Aqarly matches whatever budget, area and property type they ask for against your whole portfolio, qualifies them, and books the viewing.</p>
+  </section>
+
+  <section class="demo">
+    <div class="tabs" role="tablist">
+      <button class="tab active" data-tab="chat" id="tabChat" role="tab" aria-selected="true">WhatsApp Chat</button>
+      <button class="tab" data-tab="dashboard" id="tabDash" role="tab" aria-selected="false">Agent Dashboard</button>
+    </div>
+
+    <div class="stage">
+      <div class="view" id="view-chat">
+        <div class="phone-wrap">
+          <div class="phone">
+            <header class="wa-header">
+              <div class="wa-avatar">A</div>
+              <div>
+                <div class="wa-title">Aqarly Properties</div>
+                <div class="wa-sub"><span class="dot"></span>Online · Typically replies instantly</div>
+              </div>
+              <div class="wa-header-actions">
+                <button class="wa-icon-btn" id="keyBtn" title="Set your Claude API key" aria-label="Set your Claude API key">🔑</button>
+                <button class="wa-icon-btn" id="resetBtn" title="Reset conversation" aria-label="Reset conversation">↺</button>
+              </div>
+            </header>
+            <div class="wa-keybar" id="keyBar" hidden>
+              <p>Paste your own Anthropic API key to power live AI replies (get one at console.anthropic.com). It's stored only in this browser and sent only to Anthropic — never anywhere else. Leave it empty to use the built-in scripted demo instead.</p>
+              <div class="row">
+                <input id="apiKeyInput" type="password" placeholder="sk-ant-…" autocomplete="off" />
+                <button id="saveKeyBtn">Save</button>
+              </div>
+            </div>
+            <div class="wa-messages" id="messages"></div>
+            <div class="status-line" id="statusLine" hidden></div>
+            <div class="wa-composer">
+              <input id="chatInput" type="text" placeholder="Message Aqarly Properties…" autocomplete="off" />
+              <button class="wa-send" id="sendBtn" aria-label="Send">➤</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="view-dashboard" hidden>
+        <div class="dash-head">
+          <h2>Qualified leads</h2>
+          <p>Populated automatically from every WhatsApp conversation — no manual entry.</p>
+        </div>
+        <div class="lead-grid" id="leadGrid"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="value-strip">
+    <div class="value-item">
+      <h3>Answers instantly, in any timezone</h3>
+      <p>No missed WhatsApp enquiries overnight or over a long weekend — every message gets a reply in seconds.</p>
+    </div>
+    <div class="value-item">
+      <h3>Matches your whole portfolio</h3>
+      <p>Studio to penthouse, across every area and budget — the right listings surface from what the customer actually asks for.</p>
+    </div>
+    <div class="value-item">
+      <h3>Hands off a ready lead</h3>
+      <p>Your team opens the dashboard to a scored lead and a booked viewing, not a name and a guess.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>Aqarly · Dubai <span class="ar">دبي</span></span>
+    <span>Live demo, powered by Claude — 🤖 built with Claude Code</span>
+  </footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var MODEL = "claude-haiku-4-5-20251001";
+  var API_KEY_STORAGE = "aqarly_api_key";
+
+  var PROPERTIES = [
+    { id:"p1",  title:"Nova Court – Studio",         type:"Studio",    area:"JVC",             price:620000,   sqft:410,  handover:"Ready now", developer:"Nova Homes" },
+    { id:"p2",  title:"Bay Vista – 1BR",              type:"1BR",       area:"Business Bay",    price:980000,   sqft:730,  handover:"Q2 2026",   developer:"Skyline Developers" },
+    { id:"p3",  title:"Marina Point – 1BR",           type:"1BR",       area:"Dubai Marina",    price:1350000,  sqft:810,  handover:"Ready now", developer:"Meridian Developments" },
+    { id:"p4",  title:"Marina Heights Tower – 2BR",   type:"2BR",       area:"Dubai Marina",    price:2450000,  sqft:1180, handover:"Q4 2026",   developer:"Meridian Developments" },
+    { id:"p5",  title:"Nova Court – 2BR",             type:"2BR",       area:"JVC",             price:1450000,  sqft:1050, handover:"Ready now", developer:"Nova Homes" },
+    { id:"p6",  title:"Skyline Residences – 2BR",     type:"2BR",       area:"Downtown Dubai",  price:3200000,  sqft:1240, handover:"Q1 2027",   developer:"Skyline Developers" },
+    { id:"p7",  title:"Hills Retreat – 3BR",          type:"3BR",       area:"Dubai Hills",     price:4100000,  sqft:2150, handover:"Ready now", developer:"Vista Developments" },
+    { id:"p8",  title:"Ranches Villa – 3BR",          type:"Villa",     area:"Arabian Ranches", price:5800000,  sqft:3400, handover:"Ready now", developer:"Vista Developments" },
+    { id:"p9",  title:"Palma Residences – Penthouse", type:"Penthouse", area:"Palm Jumeirah",   price:12500000, sqft:4600, handover:"Ready now", developer:"Palma Estates" },
+    { id:"p10", title:"Ranches Villa – 4BR",          type:"Villa",     area:"Arabian Ranches", price:6900000,  sqft:4100, handover:"Q3 2026",   developer:"Vista Developments" },
+    { id:"p11", title:"Bay Vista – Studio",           type:"Studio",    area:"Business Bay",    price:750000,   sqft:465,  handover:"Ready now", developer:"Skyline Developers" },
+    { id:"p12", title:"JBR Shores – 2BR",             type:"2BR",       area:"JBR",             price:2900000,  sqft:1320, handover:"Ready now", developer:"Palma Estates" }
+  ];
+  var PROPS_BY_ID = {};
+  PROPERTIES.forEach(function(p){ PROPS_BY_ID[p.id] = p; });
+
+  // ---- built-in property art: themed inline SVG per area, no network needed ----
+  var AREA_PALETTES = {
+    "Dubai Marina":    { sky:["#12343a","#2f6b5e"], motif:"skyline" },
+    "JVC":             { sky:["#3c3626","#8f6a2c"], motif:"lowrise" },
+    "Downtown Dubai":  { sky:["#1c1a2e","#4a3f66"], motif:"spire" },
+    "Business Bay":    { sky:["#1b2a3a","#3f5a72"], motif:"lowrise" },
+    "Palm Jumeirah":   { sky:["#0d3b3f","#1f7a72"], motif:"palm" },
+    "Arabian Ranches": { sky:["#3a2c1c","#8f6a2c"], motif:"dune" },
+    "Dubai Hills":     { sky:["#1c2e1f","#3f6b4a"], motif:"hills" },
+    "JBR":             { sky:["#0d2a3a","#2f7ea6"], motif:"waves" }
+  };
+  function motifShape(motif, accent){
+    switch (motif){
+      case "skyline": return '<g fill="'+accent+'" opacity="0.85"><rect x="8" y="22" width="6" height="18"/><rect x="16" y="14" width="7" height="26"/><rect x="26" y="20" width="6" height="20"/><rect x="36" y="10" width="7" height="30"/><rect x="46" y="24" width="6" height="16"/><rect x="54" y="18" width="6" height="22"/></g><rect x="0" y="38" width="64" height="2" fill="'+accent+'" opacity="0.4"/>';
+      case "lowrise": return '<g fill="'+accent+'" opacity="0.85"><rect x="6" y="26" width="10" height="14"/><rect x="20" y="20" width="10" height="20"/><rect x="34" y="28" width="10" height="12"/><rect x="48" y="22" width="10" height="18"/></g>';
+      case "spire":   return '<g fill="'+accent+'" opacity="0.85"><polygon points="32,6 38,40 26,40"/><rect x="10" y="26" width="8" height="14"/><rect x="46" y="24" width="8" height="16"/></g>';
+      case "palm":    return '<g fill="'+accent+'" opacity="0.85"><rect x="30" y="18" width="3" height="22"/><path d="M31 18 Q20 12 12 18 Q22 16 31 22 Z"/><path d="M31 18 Q42 12 50 18 Q40 16 31 22 Z"/><path d="M31 18 Q24 8 16 6 Q26 10 31 18 Z"/><path d="M31 18 Q38 8 46 6 Q36 10 31 18 Z"/></g>';
+      case "dune":    return '<g fill="'+accent+'" opacity="0.85"><path d="M0 34 Q16 22 32 32 T64 30 V48 H0 Z"/><rect x="24" y="26" width="10" height="8"/><polygon points="24,26 29,20 34,26"/></g>';
+      case "hills":   return '<g fill="'+accent+'" opacity="0.85"><path d="M0 30 Q16 16 32 28 T64 22 V48 H0 Z"/><rect x="40" y="24" width="9" height="8"/><polygon points="40,24 44.5,18 49,24"/></g>';
+      case "waves":   return '<g fill="'+accent+'" opacity="0.85"><path d="M0 34 Q8 28 16 34 T32 34 T48 34 T64 34 V48 H0 Z"/><circle cx="46" cy="16" r="4"/></g>';
+      default: return "";
+    }
+  }
+  function areaArt(area, seedId){
+    var pal = AREA_PALETTES[area] || AREA_PALETTES["Dubai Marina"];
+    var gid = "g" + seedId;
+    return '<svg viewBox="0 0 64 48" xmlns="http://www.w3.org/2000/svg">' +
+      '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">' +
+        '<stop offset="0%" stop-color="' + pal.sky[0] + '"/><stop offset="100%" stop-color="' + pal.sky[1] + '"/>' +
+      '</linearGradient></defs>' +
+      '<rect width="64" height="48" fill="url(#' + gid + ')"/>' +
+      motifShape(pal.motif, "#eee7d6") +
+      '</svg>';
+  }
+
+  function fmtPrice(n){ return "AED " + Number(n).toLocaleString("en-US"); }
+  function normalizeType(t){
+    if (!t) return null; t = String(t).toLowerCase();
+    if (/studio/.test(t)) return "Studio";
+    if (/\b1\s*-?\s*(bed|br)\b|one bedroom/.test(t)) return "1BR";
+    if (/\b2\s*-?\s*(bed|br)\b|two bedroom/.test(t)) return "2BR";
+    if (/\b3\s*-?\s*(bed|br)\b|three bedroom/.test(t)) return "3BR";
+    if (/villa|\b4\s*-?\s*(bed|br)\b/.test(t)) return "Villa";
+    if (/penthouse/.test(t)) return "Penthouse";
+    return null;
+  }
+  function normalizeArea(t){
+    if (!t) return null; t = String(t).toLowerCase();
+    if (/marina/.test(t)) return "Dubai Marina";
+    if (/jvc|jumeirah village circle/.test(t)) return "JVC";
+    if (/downtown/.test(t)) return "Downtown Dubai";
+    if (/business bay/.test(t)) return "Business Bay";
+    if (/palm/.test(t)) return "Palm Jumeirah";
+    if (/ranches/.test(t)) return "Arabian Ranches";
+    if (/hills/.test(t)) return "Dubai Hills";
+    if (/jbr|jumeirah beach residence/.test(t)) return "JBR";
+    return null;
+  }
+  function parseBudget(text){
+    var t = String(text).toLowerCase();
+    var m = t.match(/(\d+(?:[.,]\d+)?)\s*(m|million|mio)\b/);
+    if (m) return Math.round(parseFloat(m[1].replace(",", ".")) * 1000000);
+    m = t.match(/(\d+(?:[.,]\d+)?)\s*k\b/);
+    if (m) return Math.round(parseFloat(m[1].replace(",", ".")) * 1000);
+    m = t.match(/aed\s*([\d,]{5,})/);
+    if (m) return parseInt(m[1].replace(/,/g, ""), 10);
+    m = t.match(/\b(\d{6,8})\b/);
+    if (m) return parseInt(m[1], 10);
+    return null;
+  }
+  function filterProperties(crit){
+    crit = crit || {};
+    var type = normalizeType(crit.type);
+    var area = normalizeArea(crit.area);
+    var budgetMax = crit.budgetMax ? Number(crit.budgetMax) : null;
+    function pass(p, withBudget){
+      if (type && p.type !== type) return false;
+      if (area && p.area !== area) return false;
+      if (withBudget && budgetMax && p.price > budgetMax * 1.15) return false;
+      return true;
+    }
+    var pool = PROPERTIES.filter(function(p){ return pass(p, true); });
+    if (!pool.length) pool = PROPERTIES.filter(function(p){ return pass(p, false); });
+    if (!pool.length) pool = PROPERTIES.slice();
+    pool.sort(function(a, b){
+      if (budgetMax) return Math.abs(a.price - budgetMax) - Math.abs(b.price - budgetMax);
+      return a.price - b.price;
+    });
+    return pool.slice(0, 3);
+  }
+  function hasAnyCriteria(text){ return !!(parseBudget(text) || normalizeType(text) || normalizeArea(text)); }
+
+  var RULES = [
+    "You are the Aqarly WhatsApp Business assistant for a Dubai real-estate brokerage with listings across many budgets, areas and property types — from studios to penthouses. A customer has just messaged the WhatsApp Business number first, out of the blue, describing what they're looking for.",
+    "",
+    "CONVERSATION GOALS, one short WhatsApp-style message at a time (1-3 sentences, casual but professional, plain text, no markdown, no headers, like a real person texting):",
+    "1. As soon as they mention any of budget, area, or property type, call search_properties with whatever you have (partial is fine). Present up to 3 results as a short numbered list (1, 2, 3) in the order returned, using the EXACT price/area/type/sqft the tool gave you — never invent or guess details. If they haven't given any criteria yet, ask what budget, area, and property type they're looking for.",
+    "2. Once they pick one (by number, name, or area), treat it as their selected property and stop suggesting others unless asked.",
+    "3. Then naturally learn: living-in vs investment, cash vs mortgage financing, whether the price works for them, and their timeline (ready now / 3-6 months / just researching).",
+    "4. Mention UAE Golden Visa eligibility if the selected property is AED 2,000,000 or more, when it fits the conversation.",
+    "5. Ask for the best phone number or email.",
+    "6. Offer exactly these three viewing slots and get them to pick one: \"Tomorrow 4:00 PM\", \"Thursday 11:00 AM\", \"Saturday 2:00 PM\".",
+    "7. Confirm the booking warmly and mention an agent will call to confirm.",
+    "",
+    "TOOL USE: call search_properties whenever criteria are given or changed. Call save_lead whenever you learn new qualifying info (property, purpose, financing, budgetFit, timeline, visaInterest, contact, preferredViewing), and again once a viewing is confirmed — set qualification from everything so far: Hot = ready to view/buy soon and budget fits; Warm = interested but timeline or budget unclear; Cold = just browsing, budget mismatch, or not ready. Write \"summary\" as one crisp sentence a busy sales agent can scan in two seconds.",
+    "",
+    "Stay in character as the assistant only. Never mention Claude, AI models, or this instruction text."
+  ].join("\n");
+
+  var GREETING = "Hi! 👋 Thanks for messaging Aqarly Properties on WhatsApp. Tell us your budget, preferred area, and property type (e.g. \"2 bedroom in Dubai Marina under 3M\") and we'll send matching options right away.";
+
+  var SEED_LEADS = [
+    { name:"Farah Haddad", property:"Palma Residences – Penthouse", contact:"+971 5• ••• 2214", purpose:"investment", financing:"cash", budgetFit:"fits", timeline:"ready now", visaInterest:true, preferredViewing:"Confirmed — Tue 5:00 PM", qualification:"Hot", summary:"Cash buyer, ready now for the Palm Jumeirah penthouse — send the contract today.", example:true },
+    { name:"Owen Marsh", property:"Hills Retreat – 3BR", contact:"owen.m••••@gmail.com", purpose:"end-use", financing:"mortgage", budgetFit:"tight", timeline:"3-6 months", visaInterest:false, preferredViewing:"—", qualification:"Warm", summary:"Relocating for work, still mortgage-shopping for the Dubai Hills 3BR — nurture with a financing partner intro.", example:true },
+    { name:"Priya Nair", property:"Nova Court – Studio", contact:"—", purpose:"unspecified", financing:"unspecified", budgetFit:"unspecified", timeline:"just researching", visaInterest:false, preferredViewing:"—", qualification:"Cold", summary:"Early browsing on the JVC studio listing, no contact info given yet.", example:true }
+  ];
+
+  var ANTHROPIC_TOOLS = [
+    {
+      name: "search_properties",
+      description: "Search Aqarly's property database by budget (AED), property type (Studio/1BR/2BR/3BR/Villa/Penthouse), and/or area. Call as soon as the customer gives any of these, and again if their criteria change. Returns up to 3 best-matching listings with exact price, area, sqft and handover — always use these exact figures, never invent your own.",
+      input_schema: {
+        type: "object",
+        properties: {
+          budgetMax: { type:"number", description:"Maximum budget in AED, if mentioned" },
+          type: { type:"string", description:"e.g. Studio, 1BR, 2BR, 3BR, Villa, Penthouse" },
+          area: { type:"string", description:"e.g. Dubai Marina, JVC, Downtown Dubai, Business Bay, Palm Jumeirah, Arabian Ranches, Dubai Hills, JBR" }
+        }
+      }
+    },
+    {
+      name: "save_lead",
+      description: "Save or update the current visitor's lead-qualification details in the sales dashboard. Call whenever new qualifying info is learned, and again once a viewing is confirmed.",
+      input_schema: {
+        type: "object",
+        properties: {
+          name: { type:"string", description:"Visitor's name, if given" },
+          property: { type:"string", description:"Title of the property they're interested in, once known" },
+          contact: { type:"string", description:"Phone or email, if given" },
+          purpose: { type:"string", "enum":["investment","end-use","unspecified"] },
+          financing: { type:"string", "enum":["cash","mortgage","unspecified"] },
+          budgetFit: { type:"string", "enum":["fits","tight","over-budget","unspecified"] },
+          timeline: { type:"string", description:"e.g. 'ready now', '3-6 months', 'just researching'" },
+          visaInterest: { type:"boolean", description:"Whether they showed interest in Golden Visa eligibility" },
+          preferredViewing: { type:"string", description:"Proposed or confirmed viewing slot" },
+          qualification: { type:"string", "enum":["Hot","Warm","Cold"] },
+          summary: { type:"string", description:"One crisp sentence for the sales agent" }
+        },
+        required: ["qualification","summary"]
+      }
+    }
+  ];
+
+  var chatLog = [];
+  var liveLead = null;
+  var thinking = false;
+  var lastSearchResults = null;
+
+  var stage = "search";
+  var lastMatches = [];
+  var selectedProperty = null;
+
+  function nowTime(){
+    var d = new Date(), h = d.getHours(), m = d.getMinutes();
+    return ((h % 12) || 12) + ":" + (m < 10 ? "0" : "") + m + " " + (h < 12 ? "AM" : "PM");
+  }
+  function getApiKey(){ try { return (localStorage.getItem(API_KEY_STORAGE) || "").trim(); } catch(e){ return ""; } }
+  function setApiKey(k){ try { localStorage.setItem(API_KEY_STORAGE, k); } catch(e){} }
+
+  function summarize(l, q, property){
+    var bits = [];
+    if (property) bits.push(property.title);
+    if (l.purpose && l.purpose !== "unspecified") bits.push(l.purpose);
+    if (l.financing && l.financing !== "unspecified") bits.push(l.financing + " buyer");
+    if (l.timeline) bits.push(l.timeline);
+    var base = bits.length ? bits.join(", ") : "qualified via chat";
+    return q + " lead — " + base + (l.visaInterest ? ", interested in Golden Visa" : "") + ".";
+  }
+  function pickIndex(text, n){
+    var m = String(text).match(/\b([1-9])\b/);
+    if (m){ var i = parseInt(m[1], 10) - 1; if (i >= 0 && i < n) return i; }
+    return -1;
+  }
+  function handleScripted(text){
+    var t = text.toLowerCase();
+    switch (stage){
+      case "search": {
+        if (!hasAnyCriteria(text)){
+          return { text: "Sure! What budget, area, and property type are you looking for — for example \"2 bedroom in Dubai Marina under 3 million\"?" };
+        }
+        lastMatches = filterProperties({ budgetMax: parseBudget(text), type: text, area: text });
+        stage = "select";
+        var lines = lastMatches.map(function(p, i){ return (i + 1) + ") " + p.title + " — " + fmtPrice(p.price); });
+        return { text: "Here are a few options that could work:\n" + lines.join("\n") + "\nWhich one interests you — 1, 2, or 3?", cards: lastMatches.map(function(p){ return p.id; }) };
+      }
+      case "select": {
+        var idx = pickIndex(text, lastMatches.length);
+        selectedProperty = lastMatches[idx >= 0 ? idx : 0];
+        upsertLead({ property: selectedProperty.title, qualification: "Warm", summary: "Mid-conversation — more to confirm." });
+        stage = "purpose";
+        return { text: "Great choice — " + selectedProperty.title + " is " + fmtPrice(selectedProperty.price) + " in " + selectedProperty.area + ". Is this mainly for your own home, or as an investment?" };
+      }
+      case "purpose": {
+        var purpose = /invest/.test(t) ? "investment" : /live|home|myself|family/.test(t) ? "end-use" : "unspecified";
+        upsertLead({ purpose: purpose });
+        stage = "financing";
+        return { text: "Will you be paying cash, or would you need mortgage financing?" };
+      }
+      case "financing": {
+        var financing = /cash/.test(t) ? "cash" : /mortgage|finance|loan/.test(t) ? "mortgage" : "unspecified";
+        upsertLead({ financing: financing });
+        stage = "budgetFit";
+        return { text: "Understood — and does " + fmtPrice(selectedProperty.price) + " work within your budget?" };
+      }
+      case "budgetFit": {
+        var budgetFit = /no|too|over|high|expensive/.test(t) ? "over-budget" : /yes|works|fine|good|fits|sure|ok/.test(t) ? "fits" : "tight";
+        upsertLead({ budgetFit: budgetFit });
+        stage = "timeline";
+        return { text: "Great — what's your timeline? Ready now, in the next 3-6 months, or just researching?" };
+      }
+      case "timeline": {
+        var timeline = /now|asap|ready/.test(t) ? "ready now" : /3|6|month/.test(t) ? "3-6 months" : "just researching";
+        var visa = /visa/.test(t);
+        upsertLead({ timeline: timeline, visaInterest: visa });
+        stage = "contact";
+        var visaLine = selectedProperty.price >= 2000000 ? " By the way, at this price you'd also qualify for UAE Golden Visa eligibility, in case residency matters to you." : "";
+        return { text: "Noted." + visaLine + " What's the best phone number or email to send the brochure to?" };
+      }
+      case "contact": {
+        upsertLead({ contact: text.trim() });
+        stage = "slot";
+        return { text: "Perfect, got that. Would any of these work for a viewing — \"Tomorrow 4:00 PM\", \"Thursday 11:00 AM\", or \"Saturday 2:00 PM\"?" };
+      }
+      case "slot": {
+        var slot = text.trim();
+        var lead = liveLead || {};
+        var qualification = "Warm";
+        if (lead.financing === "cash" && lead.budgetFit === "fits" && lead.timeline === "ready now") qualification = "Hot";
+        else if (lead.timeline === "just researching" || lead.budgetFit === "over-budget") qualification = "Cold";
+        upsertLead({ preferredViewing: slot, qualification: qualification, summary: summarize(lead, qualification, selectedProperty) });
+        stage = "done";
+        return { text: "You're booked for " + slot + " to view " + selectedProperty.title + " — an agent will call shortly to confirm!" };
+      }
+      default:
+        return { text: "Thanks! Your viewing is booked — is there anything else you'd like to know, or would you like to see other options?" };
+    }
+  }
+
+  var messagesEl = document.getElementById("messages");
+  var inputEl = document.getElementById("chatInput");
+  var sendBtn = document.getElementById("sendBtn");
+  var statusEl = document.getElementById("statusLine");
+  var leadGrid = document.getElementById("leadGrid");
+  var resetBtn = document.getElementById("resetBtn");
+  var keyBtn = document.getElementById("keyBtn");
+  var keyBar = document.getElementById("keyBar");
+  var apiKeyInput = document.getElementById("apiKeyInput");
+  var saveKeyBtn = document.getElementById("saveKeyBtn");
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+    });
+  }
+
+  function propCardHtml(p){
+    return '<div class="prop-card">' +
+      '<div class="prop-thumb">' + areaArt(p.area, p.id) + '</div>' +
+      '<div class="prop-info">' +
+        '<div class="prop-title">' + escapeHtml(p.title) + '</div>' +
+        '<div class="prop-meta">' + escapeHtml(p.area) + ' · ' + escapeHtml(p.type) + ' · ' + p.sqft.toLocaleString("en-US") + ' sqft</div>' +
+        '<div class="prop-price">' + fmtPrice(p.price) + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderMessages(){
+    messagesEl.innerHTML = chatLog.map(function(m){
+      var isUser = m.role === "user";
+      var html = '<div class="wa-row ' + (isUser ? "user" : "bot") + '">';
+      html += '<div class="wa-bubble ' + (isUser ? "user" : "bot") + '">' + escapeHtml(m.text) + '</div>';
+      html += '<div class="wa-meta">' + escapeHtml(m.time || "") + (isUser ? ' <span class="wa-tick">✓✓</span>' : '') + '</div>';
+      if (m.cards && m.cards.length){
+        html += '<div class="prop-cards">' + m.cards.map(function(id){
+          var p = PROPS_BY_ID[id]; return p ? propCardHtml(p) : "";
+        }).join("") + '</div>';
+      }
+      html += '</div>';
+      return html;
+    }).join("");
+    if (thinking){
+      messagesEl.innerHTML += '<div class="wa-row bot"><div class="wa-bubble bot thinking" id="thinkingBubble">Typing…</div></div>';
+    }
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function setStatus(text, isError){
+    if (!text){ statusEl.hidden = true; statusEl.textContent = ""; return; }
+    statusEl.hidden = false;
+    statusEl.textContent = text;
+    statusEl.className = "status-line" + (isError ? " error" : "");
+  }
+
+  function factRow(label, value){
+    return '<div><dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value || "—") + '</dd></div>';
+  }
+
+  function leadCardHtml(l, isLive){
+    var q = (l.qualification || "warm").toLowerCase();
+    if (["hot","warm","cold"].indexOf(q) === -1) q = "warm";
+    var footRight = isLive
+      ? '<span class="live-tag"><span class="dot"></span>Live from chat above</span>'
+      : '<span class="example-tag">Example — past enquiry</span>';
+    return (
+      '<div class="lead-card' + (isLive ? ' live' : '') + '">' +
+        '<div class="lead-top">' +
+          '<div><div class="lead-name">' + escapeHtml(l.name || "New visitor") + '</div>' +
+          '<div class="lead-contact">' + escapeHtml(l.contact || "no contact yet") + '</div></div>' +
+          '<span class="badge ' + q + '">' + escapeHtml(l.qualification || "Warm") + '</span>' +
+        '</div>' +
+        '<p class="lead-summary">' + escapeHtml(l.summary || "Qualification in progress…") + '</p>' +
+        '<dl class="lead-facts">' +
+          factRow("Property", l.property) +
+          factRow("Purpose", l.purpose) +
+          factRow("Financing", l.financing) +
+          factRow("Timeline", l.timeline) +
+          factRow("Viewing", l.preferredViewing) +
+        '</dl>' +
+        '<div class="lead-foot">' +
+          '<span>' + (l.visaInterest ? "Asked about Golden Visa" : "") + '</span>' +
+          footRight +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function renderDashboard(){
+    var html = "";
+    if (liveLead) html += leadCardHtml(liveLead, true);
+    SEED_LEADS.forEach(function(l){ html += leadCardHtml(l, false); });
+    leadGrid.innerHTML = html;
+  }
+
+  function upsertLead(fields){
+    if (!liveLead) liveLead = {};
+    Object.keys(fields || {}).forEach(function(k){
+      if (fields[k] !== undefined && fields[k] !== null && fields[k] !== "") liveLead[k] = fields[k];
+    });
+    renderDashboard();
+  }
+
+  function runTool(name, input){
+    if (name === "search_properties"){
+      var matches = filterProperties(input || {});
+      lastSearchResults = matches;
+      return matches.map(function(p){ return { id:p.id, title:p.title, type:p.type, area:p.area, price:p.price, sqft:p.sqft, handover:p.handover }; });
+    }
+    if (name === "save_lead"){
+      upsertLead(input);
+      return "Saved to dashboard.";
+    }
+    return "Unknown tool: " + name;
+  }
+
+  async function callClaudeAPI(apiKey, log){
+    var startIdx = 0;
+    while (startIdx < log.length && log[startIdx].role !== "user") startIdx++;
+    var messages = log.slice(startIdx).map(function(m){ return { role: m.role, content: m.text }; });
+
+    lastSearchResults = null;
+    var rounds = 0;
+    while (rounds < 4){
+      rounds++;
+      var resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true"
+        },
+        body: JSON.stringify({
+          model: MODEL,
+          max_tokens: 500,
+          system: RULES,
+          messages: messages,
+          tools: ANTHROPIC_TOOLS
+        })
+      });
+      if (!resp.ok){
+        var errBody = await resp.text().catch(function(){ return ""; });
+        throw new Error("API error " + resp.status + ": " + errBody.slice(0, 200));
+      }
+      var data = await resp.json();
+      var content = data.content || [];
+      var textParts = content.filter(function(b){ return b.type === "text"; }).map(function(b){ return b.text; });
+      var toolUses = content.filter(function(b){ return b.type === "tool_use"; });
+      if (!toolUses.length){
+        return { text: textParts.join("\n\n").trim(), cards: lastSearchResults ? lastSearchResults.map(function(p){ return p.id; }) : undefined };
+      }
+      messages.push({ role: "assistant", content: content });
+      var resultsContent = toolUses.map(function(tu){
+        var out;
+        try { out = runTool(tu.name, tu.input); } catch (err){ out = "Error: " + err.message; }
+        return { type: "tool_result", tool_use_id: tu.id, content: typeof out === "string" ? out : JSON.stringify(out) };
+      });
+      messages.push({ role: "user", content: resultsContent });
+    }
+    return { text: "Sorry, that took a bit long — could you repeat that?", cards: undefined };
+  }
+
+  function setBusy(isBusy){
+    thinking = isBusy;
+    inputEl.disabled = isBusy;
+    sendBtn.disabled = isBusy;
+    renderMessages();
+  }
+
+  function runScriptedTurn(text){
+    return new Promise(function(resolve){
+      setTimeout(function(){
+        var reply = handleScripted(text);
+        chatLog.push({ role: "assistant", text: reply.text, time: nowTime(), cards: reply.cards });
+        setBusy(false);
+        resolve();
+      }, 550 + Math.random() * 350);
+    });
+  }
+
+  async function sendMessage(){
+    var text = inputEl.value.trim();
+    if (!text || thinking) return;
+    inputEl.value = "";
+    chatLog.push({ role: "user", text: text, time: nowTime() });
+    setBusy(true);
+    setStatus("");
+
+    var apiKey = getApiKey();
+    if (!apiKey){
+      console.log("[Aqarly demo] no API key set — using scripted fallback.");
+      await runScriptedTurn(text);
+      return;
+    }
+
+    try {
+      var res = await callClaudeAPI(apiKey, chatLog);
+      chatLog.push({ role: "assistant", text: res.text, time: nowTime(), cards: res.cards });
+      setBusy(false);
+    } catch (e){
+      console.warn("[Aqarly demo] live AI call failed — falling back to scripted flow for this turn.", e);
+      setStatus("Live AI hiccup just then — continuing with the backup flow.", true);
+      await runScriptedTurn(text);
+    }
+  }
+
+  function resetConversation(){
+    chatLog = [ { role: "assistant", text: GREETING, time: nowTime() } ];
+    liveLead = null;
+    stage = "search";
+    lastMatches = [];
+    selectedProperty = null;
+    lastSearchResults = null;
+    setBusy(false);
+    setStatus("");
+    renderMessages();
+    renderDashboard();
+  }
+
+  sendBtn.addEventListener("click", sendMessage);
+  inputEl.addEventListener("keydown", function(e){ if (e.key === "Enter") sendMessage(); });
+  resetBtn.addEventListener("click", resetConversation);
+
+  keyBtn.addEventListener("click", function(){
+    keyBar.hidden = !keyBar.hidden;
+    if (!keyBar.hidden) apiKeyInput.value = getApiKey();
+  });
+  saveKeyBtn.addEventListener("click", function(){
+    setApiKey(apiKeyInput.value.trim());
+    keyBar.hidden = true;
+    setStatus(getApiKey() ? "API key saved — live AI is on." : "API key cleared — using the scripted demo.", false);
+    setTimeout(function(){ setStatus(""); }, 2500);
+  });
+
+  var tabChat = document.getElementById("tabChat");
+  var tabDash = document.getElementById("tabDash");
+  var viewChat = document.getElementById("view-chat");
+  var viewDash = document.getElementById("view-dashboard");
+  function showTab(name){
+    var isChat = name === "chat";
+    viewChat.hidden = !isChat;
+    viewDash.hidden = isChat;
+    tabChat.classList.toggle("active", isChat);
+    tabDash.classList.toggle("active", !isChat);
+    tabChat.setAttribute("aria-selected", String(isChat));
+    tabDash.setAttribute("aria-selected", String(!isChat));
+  }
+  tabChat.addEventListener("click", function(){ showTab("chat"); });
+  tabDash.addEventListener("click", function(){ showTab("dashboard"); });
+
+  chatLog = [ { role: "assistant", text: GREETING, time: nowTime() } ];
+  renderMessages();
+  renderDashboard();
+})();
+</script>
+</body>
+</html>
