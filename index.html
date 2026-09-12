@@ -96,8 +96,8 @@
 
   .prop-cards{ display:flex; flex-direction:column; gap:6px; margin-top:3px; width:100%; }
   .prop-card{ display:flex; gap:9px; background:var(--wa-received); border-radius:10px; padding:8px; box-shadow:0 1px 1px rgba(0,0,0,0.1); align-items:center; }
-  .prop-thumb{ width:56px; height:42px; border-radius:8px; overflow:hidden; flex-shrink:0; }
-  .prop-thumb svg{ width:100%; height:100%; display:block; }
+  .prop-thumb{ width:92px; height:72px; border-radius:8px; overflow:hidden; flex-shrink:0; background:var(--marina); }
+  .prop-thumb img{ width:100%; height:100%; display:block; object-fit:cover; }
   .prop-info{ min-width:0; }
   .prop-title{ font-weight:700; font-size:0.8rem; color:var(--wa-received-text); }
   .prop-meta{ font-size:0.7rem; color:var(--text-muted); margin-top:1px; }
@@ -234,18 +234,30 @@
   var API_KEY_STORAGE = "aqarly_api_key";
 
   var PROPERTIES = [
-    { id:"p1",  title:"Nova Court – Studio",         type:"Studio",    area:"JVC",             price:620000,   sqft:410,  handover:"Ready now", developer:"Nova Homes" },
-    { id:"p2",  title:"Bay Vista – 1BR",              type:"1BR",       area:"Business Bay",    price:980000,   sqft:730,  handover:"Q2 2026",   developer:"Skyline Developers" },
-    { id:"p3",  title:"Marina Point – 1BR",           type:"1BR",       area:"Dubai Marina",    price:1350000,  sqft:810,  handover:"Ready now", developer:"Meridian Developments" },
-    { id:"p4",  title:"Marina Heights Tower – 2BR",   type:"2BR",       area:"Dubai Marina",    price:2450000,  sqft:1180, handover:"Q4 2026",   developer:"Meridian Developments" },
-    { id:"p5",  title:"Nova Court – 2BR",             type:"2BR",       area:"JVC",             price:1450000,  sqft:1050, handover:"Ready now", developer:"Nova Homes" },
-    { id:"p6",  title:"Skyline Residences – 2BR",     type:"2BR",       area:"Downtown Dubai",  price:3200000,  sqft:1240, handover:"Q1 2027",   developer:"Skyline Developers" },
-    { id:"p7",  title:"Hills Retreat – 3BR",          type:"3BR",       area:"Dubai Hills",     price:4100000,  sqft:2150, handover:"Ready now", developer:"Vista Developments" },
-    { id:"p8",  title:"Ranches Villa – 3BR",          type:"Villa",     area:"Arabian Ranches", price:5800000,  sqft:3400, handover:"Ready now", developer:"Vista Developments" },
-    { id:"p9",  title:"Palma Residences – Penthouse", type:"Penthouse", area:"Palm Jumeirah",   price:12500000, sqft:4600, handover:"Ready now", developer:"Palma Estates" },
-    { id:"p10", title:"Ranches Villa – 4BR",          type:"Villa",     area:"Arabian Ranches", price:6900000,  sqft:4100, handover:"Q3 2026",   developer:"Vista Developments" },
-    { id:"p11", title:"Bay Vista – Studio",           type:"Studio",    area:"Business Bay",    price:750000,   sqft:465,  handover:"Ready now", developer:"Skyline Developers" },
-    { id:"p12", title:"JBR Shores – 2BR",             type:"2BR",       area:"JBR",             price:2900000,  sqft:1320, handover:"Ready now", developer:"Palma Estates" }
+    { id:"p1",  title:"Nova Court – Studio",         type:"Studio",    area:"JVC",             price:620000,   sqft:410,  handover:"Ready now", developer:"Nova Homes",
+      imagePrompt:"modern minimalist studio apartment interior, Jumeirah Village Circle Dubai, warm daylight, real estate photography" },
+    { id:"p2",  title:"Bay Vista – 1BR",              type:"1BR",       area:"Business Bay",    price:980000,   sqft:730,  handover:"Q2 2026",   developer:"Skyline Developers",
+      imagePrompt:"modern one bedroom apartment interior, Business Bay Dubai skyline view from window, real estate photography" },
+    { id:"p3",  title:"Marina Point – 1BR",           type:"1BR",       area:"Dubai Marina",    price:1350000,  sqft:810,  handover:"Ready now", developer:"Meridian Developments",
+      imagePrompt:"luxury one bedroom apartment interior, Dubai Marina waterfront view, floor to ceiling windows, real estate photography" },
+    { id:"p4",  title:"Marina Heights Tower – 2BR",   type:"2BR",       area:"Dubai Marina",    price:2450000,  sqft:1180, handover:"Q4 2026",   developer:"Meridian Developments",
+      imagePrompt:"luxury two bedroom apartment living room, Dubai Marina waterfront view, modern furniture, real estate photography" },
+    { id:"p5",  title:"Nova Court – 2BR",             type:"2BR",       area:"JVC",             price:1450000,  sqft:1050, handover:"Ready now", developer:"Nova Homes",
+      imagePrompt:"bright modern two bedroom apartment interior, Jumeirah Village Circle Dubai, real estate photography" },
+    { id:"p6",  title:"Skyline Residences – 2BR",     type:"2BR",       area:"Downtown Dubai",  price:3200000,  sqft:1240, handover:"Q1 2027",   developer:"Skyline Developers",
+      imagePrompt:"luxury apartment living room, Downtown Dubai skyline view at dusk, modern design, real estate photography" },
+    { id:"p7",  title:"Hills Retreat – 3BR",          type:"3BR",       area:"Dubai Hills",     price:4100000,  sqft:2150, handover:"Ready now", developer:"Vista Developments",
+      imagePrompt:"spacious three bedroom apartment interior, Dubai Hills golf course view, modern luxury, real estate photography" },
+    { id:"p8",  title:"Ranches Villa – 3BR",          type:"Villa",     area:"Arabian Ranches", price:5800000,  sqft:3400, handover:"Ready now", developer:"Vista Developments",
+      imagePrompt:"luxury villa exterior, Arabian Ranches Dubai, modern desert architecture, palm trees, private pool, golden hour, real estate photography" },
+    { id:"p9",  title:"Palma Residences – Penthouse", type:"Penthouse", area:"Palm Jumeirah",   price:12500000, sqft:4600, handover:"Ready now", developer:"Palma Estates",
+      imagePrompt:"luxury penthouse interior, Palm Jumeirah Dubai panoramic sea view, opulent modern design, real estate photography" },
+    { id:"p10", title:"Ranches Villa – 4BR",          type:"Villa",     area:"Arabian Ranches", price:6900000,  sqft:4100, handover:"Q3 2026",   developer:"Vista Developments",
+      imagePrompt:"large luxury villa exterior, Arabian Ranches Dubai, modern architecture, landscaped garden, private pool, real estate photography" },
+    { id:"p11", title:"Bay Vista – Studio",           type:"Studio",    area:"Business Bay",    price:750000,   sqft:465,  handover:"Ready now", developer:"Skyline Developers",
+      imagePrompt:"compact modern studio apartment interior, Business Bay Dubai city view, real estate photography" },
+    { id:"p12", title:"JBR Shores – 2BR",             type:"2BR",       area:"JBR",             price:2900000,  sqft:1320, handover:"Ready now", developer:"Palma Estates",
+      imagePrompt:"modern two bedroom apartment interior, Jumeirah Beach Residence Dubai, sea view balcony, real estate photography" }
   ];
   var PROPS_BY_ID = {};
   PROPERTIES.forEach(function(p){ PROPS_BY_ID[p.id] = p; });
@@ -283,6 +295,14 @@
       '<rect width="64" height="48" fill="url(#' + gid + ')"/>' +
       motifShape(pal.motif, "#eee7d6") +
       '</svg>';
+  }
+  function svgDataUri(svgString){ return "data:image/svg+xml;utf8," + encodeURIComponent(svgString); }
+  // Real AI-generated photo per listing (Pollinations.ai, no key needed). A fixed
+  // seed keeps the same photo across reloads; if the service is unreachable the
+  // <img> falls back to the built-in illustration automatically (see onerror below).
+  function aiImageUrl(p){
+    var seed = p.id.replace(/\D/g, "") || "1";
+    return "https://image.pollinations.ai/prompt/" + encodeURIComponent(p.imagePrompt) + "?width=400&height=300&nologo=true&seed=" + seed;
   }
 
   function fmtPrice(n){ return "AED " + Number(n).toLocaleString("en-US"); }
@@ -516,8 +536,11 @@
   }
 
   function propCardHtml(p){
+    var fallback = svgDataUri(areaArt(p.area, p.id));
+    var img = '<img src="' + aiImageUrl(p) + '" alt="' + escapeHtml(p.title) + '" loading="lazy" ' +
+      'onerror="this.onerror=null;this.src=\'' + fallback + '\';">';
     return '<div class="prop-card">' +
-      '<div class="prop-thumb">' + areaArt(p.area, p.id) + '</div>' +
+      '<div class="prop-thumb">' + img + '</div>' +
       '<div class="prop-info">' +
         '<div class="prop-title">' + escapeHtml(p.title) + '</div>' +
         '<div class="prop-meta">' + escapeHtml(p.area) + ' · ' + escapeHtml(p.type) + ' · ' + p.sqft.toLocaleString("en-US") + ' sqft</div>' +
